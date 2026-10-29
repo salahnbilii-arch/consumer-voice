@@ -68,3 +68,18 @@ pre {
 #trace-log .pass { color: #1b5e20; font-weight: 700; }
 #trace-log .fail { color: #7f0000; font-weight: 700; }
 footer { color: #666; font-size: 0.85rem; text-align: center; padding: 10px 0 20px; }
+
+/* --- Army mode (Phase 2, ?army=1) — appended, no existing rule touched. --- */
+#army-panel {
+  border: 2px solid #2563eb;
+}
+#army-steps li {
+  margin: 0.3em 0;
+}
+#approval-card {
+  border: 2px solid #b91c1c;
+  background: #fef2f2;
+}
+#approval-status {
+  font-weight: bold;
+}

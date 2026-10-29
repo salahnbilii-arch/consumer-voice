@@ -39,6 +39,43 @@ This file exists so a judge can tell, at a glance, what is new here.
   key-safe architecture; `mock-model.js` stays as the offline fallback.
   The function contract is unchanged.
 
+### Phase 2 (Oct 29, 2026) — agent army (Worker-native)
+
+- `worker-proxy.js` — NEW additive route `POST /army`: the Supervisor
+  (deterministic code, not a model call) runs 5 specialist Spark Open
+  calls in sequence (Listener → Organizer → Researcher → Writer →
+  Pressure), each JSON-validated with the same fail-closed retry rules
+  as Phase 1, and returns the shared state + trace + a mandatory
+  approval gate (`needs_approval: true`, `human_decision: null`). The
+  Worker has NO publish/send/contact code path. The original `POST /`
+  single-call path is UNCHANGED (same code, same behavior) and is the
+  fallback when `/army` fails.
+- `live-model.js` — NEW `structureComplaintArmy` client (5-minute
+  timeout for 5 sequential calls; throws on any failure so the app
+  falls back to the single-call path honestly).
+- `app.js` / `index.html` / `styles.css` — NEW army mode (`?army=1`,
+  fully guarded: default behavior identical without the flag): agent
+  trace panel + approval card (approve / edit / reject, reject records
+  an optional reason in the trace). Publish in army mode requires BOTH
+  the verification pass AND explicit approval, and the publish action
+  re-checks both (edit resets approval to pending).
+- `ARMY.md` — full army design + why the spec was adapted (no
+  LangGraph: Python cannot run on Workers; no LiteLLM multi-provider
+  rotation: the hackathon runtime rule allows Meta models only; no
+  Noyce link: the live bot is never touched for the entry).
+- Spec adaptation (recorded honestly): the Grok "army" spec asked for
+  LangGraph + LiteLLM rotation + later Noyce integration. None of the
+  three was done literally, for the reasons above. What WAS built is
+  the spec's Phase 1 definition of done — Darija in → organized case +
+  AR letter + FR letter + public post + mandatory stop for approval —
+  with the same 5 agents and the same gate, on the Meta-only runtime.
+- Status correction: the "Deliberately NOT" items below about
+  `PROXY_URL` being `""` and the live path being untested describe the
+  pre-deploy state. The Worker is now deployed, `PROXY_URL` is set, and
+  the live path was proven Worker-side on Oct 29, 2026 (HTTP 200, full
+  valid contract payload). The phone test remains the first proof on a
+  real phone.
+
 ## Pre-existing (NOT built this week, NOT our work)
 
 - Browser Web Speech APIs (SpeechRecognition, SpeechSynthesis) — built

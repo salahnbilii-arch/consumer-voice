@@ -66,6 +66,28 @@
     <p class="hint">النشر متوقف على نجاح التحقق الإجباري أعلاه. بلا تحقق ناجح، زر النشر يبقى معطلا.</p>
   </section>
 
+  <!-- 3b. Army trace + approval gate (Phase 2, visible only in ?army=1 mode) -->
+  <section id="army-panel" class="panel hidden">
+    <h2>🤖 مسار الجيش — 5 وكلاء</h2>
+    <p class="hint">كل وكيل نموذج Meta (Muse Spark Open عبر Baseten) — لا نموذج آخر يشتغل وقت التشغيل.</p>
+    <p id="army-summary"></p>
+    <ol id="army-steps"></ol>
+  </section>
+
+  <section id="approval-card" class="panel hidden">
+    <h2>⛔ بوابة الموافقة البشرية — قرارك إجباري</h2>
+    <p class="hint">النظام متوقف هنا. لا نشر ولا إرسال رسالة ولا تواصل مع الشركة قبل موافقتك الصريحة.</p>
+    <h3>منشور اللوحة المقترح</h3>
+    <pre id="army-post" dir="rtl"></pre>
+    <p id="approval-status" class="status"></p>
+    <label>سبب الرفض (اختياري، إلا رفضتي) <input id="reject-reason" type="text" placeholder="مثال: الوقائع غير دقيقة"></label>
+    <div class="row">
+      <button type="button" id="btn-approve" class="primary">✅ موافقة</button>
+      <button type="button" id="btn-edit">✏️ تعديل</button>
+      <button type="button" id="btn-reject">⛔ رفض</button>
+    </div>
+  </section>
+
   <!-- 4. Public board -->
   <section id="panel-board" class="panel">
     <h2>4 · اللائحة العمومية</h2>

@@ -16,6 +16,67 @@
   let lastCheckPassed = false;
   let recognition = null;
 
+  /* --- Army mode (Phase 2, ?army=1) -----------------------------------
+   * Everything in this block is additive and guarded by ARMY_MODE: the
+   * default path below is byte-identical in behavior when the flag is
+   * absent. In army mode the structure step calls the Worker /army
+   * pipeline, renders the agent trace + approval card, and publish is
+   * gated on BOTH the existing verification pass AND explicit human
+   * approval. Reject stops the run and logs the reason. */
+  const ARMY_MODE =
+    typeof window !== "undefined" &&
+    typeof window.location !== "undefined" &&
+    new URLSearchParams(window.location.search).get("army") === "1";
+  let armyApproval = "pending"; // pending | approved | rejected
+  let armyState = null;
+
+  function renderArmyTrace(a) {
+    const panel = $("army-panel");
+    const list = $("army-steps");
+    if (!panel || !list) return;
+    panel.classList.remove("hidden");
+    list.innerHTML = "";
+    const AGENT_NAMES = {
+      listener: "1 · Darija Listener — فهم الشكوى",
+      organizer: "2 · Case Organizer — تنظيم القضية",
+      researcher: "3 · Company Researcher — بحث الشركة والقوانين",
+      writer: "4 · Letter Writer — الرسائل الرسمية",
+      pressure: "5 · Public Pressure — منشور اللوحة",
+      approval_gate: "⛔ بوابة الموافقة البشرية — متوقفة بانتظار قرارك",
+    };
+    for (const t of a.trace) {
+      const li = document.createElement("li");
+      li.textContent =
+        (AGENT_NAMES[t.agent] || t.agent) +
+        (t.status === "ok"
+          ? ` — تم${t.ms ? ` (${t.ms}ms)` : ""}`
+          : t.status === "waiting"
+            ? " — بانتظار قرارك (النشر والإرسال والتواصل مع الشركة مقفلة)"
+            : ` — ${t.status}`);
+      list.appendChild(li);
+    }
+    const sum = $("army-summary");
+    if (sum) {
+      sum.textContent =
+        `${a.caseTitle} — ${a.factsSummary}` +
+        (a.companyActivity ? ` — النشاط: ${a.companyActivity}.` : "") +
+        (a.lawAreas.length ? ` مجالات قانونية عامة: ${a.lawAreas.join("، ")}.` : "") +
+        (a.researchNotes ? ` ملاحظة البحث: ${a.researchNotes}` : "");
+    }
+  }
+
+  function showApprovalCard(a) {
+    const card = $("approval-card");
+    if (!card) return;
+    card.classList.remove("hidden");
+    const post = $("army-post");
+    if (post) post.textContent = a.publicPost;
+    const st = $("approval-status");
+    if (st) st.textContent = "القرار: بانتظارك — لا نشر ولا إرسال قبل موافقتك الصريحة.";
+    armyApproval = "pending";
+    $("btn-publish").disabled = true;
+  }
+
   /* --- Model-layer indicator (Phase 1) ---------------------------------
    * The banner + tag always show which layer produced the LAST structured
    * case, honestly: LIVE = Muse Spark Open via the Worker proxy;
@@ -173,6 +234,47 @@
       $("voice-status").textContent = "اكتب أو تكلم بشكايتك أولا.";
       return;
     }
+    /* ARMY MODE: try the 5-agent pipeline first. On any failure, fall
+     * through to the proven single-call path below — never fake data. */
+    if (
+      ARMY_MODE &&
+      typeof LIVE_CONFIG !== "undefined" &&
+      !!LIVE_CONFIG.PROXY_URL &&
+      typeof structureComplaintArmy === "function"
+    ) {
+      $("voice-status").textContent = "…جار تشغيل الجيش (5 وكلاء)";
+      try {
+        const a = await structureComplaintArmy({ transcript });
+        armyState = a;
+        armyApproval = "pending";
+        $("field-company").value = a.company;
+        $("field-issue").value = a.issue;
+        $("field-demand").value = a.demand;
+        $("field-amount").value = a.amount;
+        $("field-category").value = a.category;
+        $("letter-ar").textContent = a.letterAr;
+        $("letter-fr").textContent = a.letterFr;
+        $("panel-case").classList.remove("hidden");
+        $("panel-letter").classList.remove("hidden");
+        renderArmyTrace(a);
+        showApprovalCard(a);
+        setModelIndicator("live");
+        lastCheckPassed = false;
+        $("btn-publish").disabled = true;
+        $("voice-status").textContent = "";
+        trace(`نص الشكاية: ${transcript}`, "");
+        trace(`الجيش أكمل 5 وكلاء — القضية: ${a.caseTitle} — بانتظار الموافقة البشرية.`, "");
+        if (a.extractionNotes && a.extractionNotes.length) {
+          trace(`ملاحظات الاستخراج: ${a.extractionNotes.join(" ")}`, "fail");
+        }
+        return;
+      } catch (e) {
+        trace(
+          `فشل مسار الجيش (${e && e.message ? e.message : "خطأ"}) — استعمال الطريق الأحادي كبديل.`,
+          "fail"
+        );
+      }
+    }
     /* Default path = the proxy. The MOCK layer runs ONLY when the proxy
      * URL is unset or the proxy call fails — and the indicator + trace
      * always say which layer produced the case. */
@@ -226,7 +328,9 @@
     const result = verifyCase(c);
     showCheck(result);
     lastCheckPassed = result.passed;
-    $("btn-publish").disabled = !result.passed;
+    /* Army mode: verify alone never enables publish — explicit human
+     * approval is also required. Default path: identical to before. */
+    $("btn-publish").disabled = !(result.passed && (!ARMY_MODE || armyApproval === "approved"));
     trace(`نتيجة التحقق: ${result.detail}`, result.passed ? "pass" : "fail");
     if (!result.passed) {
       trace("إجراء مطلوب: صحح الحقول أعلاه ثم أعد التحقق (الحد الأقصى غير محدود للتصحيح، لكن النشر يبقى مقفلا).", "fail");
@@ -235,6 +339,13 @@
 
   /* --- Flow: publish — the check runs AGAIN inside this action. --------- */
   $("btn-publish").onclick = () => {
+    /* ARMY GATE: publish without explicit human approval is refused,
+     * even if verification passed. This is the gate's second lock (the
+     * first is the disabled button above). */
+    if (ARMY_MODE && armyState && armyApproval !== "approved") {
+      trace("النشر مرفوض — بانتظار الموافقة البشرية (بوابة الجيش).", "fail");
+      return;
+    }
     const c = readCaseFields();
     const result = verifyCase(c);
     if (!result.passed) {
@@ -247,10 +358,40 @@
     board.unshift({ ...c, resolved: false, reports: 0, demo: false });
     renderBoard();
     trace(`نُشرت قضية: ${c.company} — ${c.issue} — مطلوب: ${c.demand}`, "pass");
+    if (ARMY_MODE && armyState) {
+      trace("النشر تم بعد موافقة بشرية صريحة (بوابة الجيش).", "pass");
+    }
     lastCheckPassed = false;
     $("btn-publish").disabled = true;
     showCheck({ passed: true, detail: "تم النشر. القضية تظهر أعلاه كادعاء مستخدم، مع خانة رد الشركة وزر إبلاغ." });
   };
+
+  /* --- Approval card buttons (army mode only; guarded if absent) -------- */
+  if ($("btn-approve")) {
+    $("btn-approve").onclick = () => {
+      if (!armyState) return;
+      armyApproval = "approved";
+      $("approval-status").textContent = "القرار: موافقة — النشر مسموح بعد نجاح التحقق.";
+      $("btn-publish").disabled = !lastCheckPassed;
+      trace("موافقة بشرية: تمت الموافقة على النشر والإرسال.", "pass");
+    };
+    $("btn-edit").onclick = () => {
+      if (!armyState) return;
+      armyApproval = "pending";
+      $("approval-status").textContent = "القرار: تعديل — صحح الحقول أعلاه ثم أعد التحقق والموافقة.";
+      $("btn-publish").disabled = true;
+      trace("موافقة بشرية: طلب تعديل — النشر مقفل حتى موافقة جديدة.", "fail");
+      $("field-company").focus();
+    };
+    $("btn-reject").onclick = () => {
+      if (!armyState) return;
+      armyApproval = "rejected";
+      const reason = $("reject-reason") ? $("reject-reason").value.trim() : "";
+      $("approval-status").textContent = "القرار: رفض — العملية متوقفة.";
+      $("btn-publish").disabled = true;
+      trace("رفض بشري — العملية متوقفة." + (reason ? ` السبب: ${reason}` : ""), "fail");
+    };
+  }
 
   /* --- Voice in (browser SpeechRecognition, ar-MA, with fallback) ------- */
   $("btn-voice").onclick = () => {
@@ -296,6 +437,9 @@
   /* --- Init -------------------------------------------------------------- */
   renderBoard();
   trace("لوحة تجريبية: 3 قضايا وهمية بأسماء خيالية (بيانات تجريبية — للعرض فقط).", "");
+  if (ARMY_MODE) {
+    trace("وضع الجيش مفعّل (?army=1): التنظيم عبر 5 وكلاء + بوابة موافقة بشرية إجبارية قبل أي نشر أو إرسال.", "");
+  }
   setModelIndicator(
     typeof LIVE_CONFIG !== "undefined" && LIVE_CONFIG.PROXY_URL
       ? "live-ready"

@@ -99,14 +99,120 @@
     }
   }
 
+  /* --- ARMY CLIENT (Phase 2): POST {PROXY_URL}/army ---------------------
+   * Same key-safety rules as the single-call client: no key, no
+   * Authorization header, no Baseten URL here — only the Worker URL.
+   * The army pipeline is 5 sequential model calls, so this client
+   * allows up to 5 minutes. On ANY failure it THROWS and app.js falls
+   * back to the single-call LIVE path honestly (never fake data).
+   * The returned state is drafts + a mandatory approval gate:
+   * needs_approval is always true and human_decision always null here
+   * — the decision is made by the human in the browser, never by code. */
+  var ARMY_TIMEOUT_MS = 300000;
+
+  function normalizeArmyPayload(json) {
+    if (!json || typeof json !== "object" || Array.isArray(json)) {
+      throw new Error("army_bad_payload");
+    }
+    if (json.mode !== "army" || json.needs_approval !== true) {
+      throw new Error("army_bad_payload");
+    }
+    var ex = json.extraction || {};
+    var cs = json.case_summary || {};
+    var ci = json.company_info || {};
+    var amount = "";
+    if (typeof ex.amount === "number" && isFinite(ex.amount)) {
+      amount = String(ex.amount);
+    }
+    var category =
+      CATEGORIES.indexOf(ex.category) !== -1 ? ex.category : "other";
+    var trace = Array.isArray(json.trace) ? json.trace : [];
+    if (
+      typeof ex.company !== "string" ||
+      typeof ex.issue !== "string" ||
+      typeof ex.demand !== "string" ||
+      typeof json.arabic_letter !== "string" ||
+      typeof json.french_letter !== "string" ||
+      typeof json.public_post !== "string" ||
+      typeof cs.title !== "string"
+    ) {
+      throw new Error("army_bad_payload");
+    }
+    return {
+      company: ex.company,
+      issue: ex.issue,
+      demand: ex.demand,
+      amount: amount,
+      category: category,
+      letterAr: json.arabic_letter,
+      letterFr: json.french_letter,
+      extractionNotes: Array.isArray(ex.extractionNotes)
+        ? ex.extractionNotes.filter(function (n) {
+            return typeof n === "string";
+          })
+        : [],
+      caseTitle: cs.title,
+      factsSummary: typeof cs.factsSummary === "string" ? cs.factsSummary : "",
+      timeline: Array.isArray(cs.timeline)
+        ? cs.timeline.filter(function (n) {
+            return typeof n === "string";
+          })
+        : [],
+      evidence: Array.isArray(cs.evidence)
+        ? cs.evidence.filter(function (n) {
+            return typeof n === "string";
+          })
+        : [],
+      companyActivity: typeof ci.activity === "string" ? ci.activity : "",
+      lawAreas: Array.isArray(ci.lawAreas)
+        ? ci.lawAreas.filter(function (n) {
+            return typeof n === "string";
+          })
+        : [],
+      researchNotes: typeof ci.notes === "string" ? ci.notes : "",
+      publicPost: json.public_post,
+      trace: trace,
+      needsApproval: true,
+    };
+  }
+
+  async function structureComplaintArmy(options) {
+    var transcript = (options && options.transcript) || "";
+    if (!LIVE_CONFIG.PROXY_URL) {
+      throw new Error("proxy_not_configured");
+    }
+    var controller = new AbortController();
+    var timer = setTimeout(function () {
+      controller.abort();
+    }, ARMY_TIMEOUT_MS);
+    try {
+      var res = await fetch(LIVE_CONFIG.PROXY_URL + "/army", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: transcript }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        throw new Error("army_http_" + res.status);
+      }
+      var json = await res.json();
+      return normalizeArmyPayload(json);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   global.LIVE_CONFIG = LIVE_CONFIG;
   global.structureComplaintLive = structureComplaintLive;
+  global.structureComplaintArmy = structureComplaintArmy;
   /* Node/CommonJS export (tests only; browsers ignore this branch). */
   if (typeof module !== "undefined" && module.exports) {
     module.exports = {
       LIVE_CONFIG: LIVE_CONFIG,
       structureComplaintLive: structureComplaintLive,
+      structureComplaintArmy: structureComplaintArmy,
       normalizePayload: normalizePayload,
+      normalizeArmyPayload: normalizeArmyPayload,
     };
   }
 })(typeof window !== "undefined" ? window : globalThis);

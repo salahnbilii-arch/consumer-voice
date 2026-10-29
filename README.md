@@ -115,6 +115,28 @@ Browser ──POST { transcript }──► Worker proxy ──► Baseten Spark 
   after deploy (DEPLOY.md step 6). Do not claim the live path works
   until that test shows the `LIVE` banner on a real structuring call.
 
+## Phase 2 — agent army (Worker-native, `POST /army`)
+
+See `ARMY.md` for the full design. In short: the spec's 5-agent army
+(Darija Listener → Case Organizer → Company Researcher → Letter
+Writer → Public Pressure) + mandatory human approval gate, implemented
+as 5 sequential Muse Spark Open calls inside the SAME Worker — not
+LangGraph (Python cannot run on Workers) and NOT LiteLLM multi-provider
+rotation (the hackathon's runtime rule allows Meta models only at
+runtime). The supervisor is deterministic code; the gate has two locks
+(server: the Worker cannot publish/send/contact at all; browser: the
+`?army=1` approval card must grant approval AND the verification check
+must pass before publish). The original `POST /` single-call path is
+unchanged and is the fallback when `/army` fails.
+
+**Status correction (Oct 29, 2026, after deploy):** `PROXY_URL` in
+`live-model.js` is now set to the deployed Worker
+(`https://consumer-voice-proxy.numaa.workers.dev`) and the live path
+was proven by a Worker-side test the same day (HTTP 200 with a full
+valid contract payload). The "currently `""`" note and the caveat above
+describe the pre-deploy state and are superseded for the deployed
+Worker; the phone test remains the first proof on a real phone.
+
 ## How to run
 
 No build step, no dependencies, no key needed for Phase 0:
