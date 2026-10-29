@@ -1,0 +1,70 @@
+/* Consumer Voice — Phase 0 styles. Light, phone-first, system fonts only. */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f4f4f2;
+  color: #1a1a1a;
+  line-height: 1.6;
+}
+main { max-width: 640px; margin: 0 auto; padding: 12px; }
+header h1 { font-size: 1.9rem; margin: 8px 0 0; }
+.tagline { color: #444; margin: 4px 0 12px; }
+.mock-banner {
+  background: #fff3cd; border: 1px solid #d9a400; border-radius: 8px;
+  padding: 10px 12px; font-size: 0.95rem;
+}
+.live-banner {
+  background: #e2f3e2; border: 1px solid #2e7d32; border-radius: 8px;
+  padding: 10px 12px; font-size: 0.95rem;
+}
+.panel {
+  background: #fff; border: 1px solid #ddd; border-radius: 10px;
+  padding: 14px; margin: 14px 0;
+}
+.panel h2 { margin: 0 0 8px; font-size: 1.25rem; }
+.panel h3 { margin: 14px 0 4px; font-size: 1rem; }
+.hidden { display: none; }
+.hint { color: #555; font-size: 0.92rem; margin: 4px 0 10px; }
+textarea, input[type="text"], select {
+  width: 100%; font: inherit; padding: 10px; border: 1px solid #bbb;
+  border-radius: 8px; margin: 2px 0 10px;
+}
+label { display: block; font-weight: 600; font-size: 0.95rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+button {
+  font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 8px;
+  border: 1px solid #888; background: #eee; cursor: pointer;
+}
+button.primary { background: #0b5fff; color: #fff; border-color: #0b5fff; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.status { color: #555; font-size: 0.9rem; }
+.mock-tag {
+  background: #d32f2f; color: #fff; font-size: 0.7rem; padding: 2px 7px;
+  border-radius: 20px; vertical-align: middle;
+}
+.check { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-weight: 600; }
+.check.pass { background: #e2f3e2; border: 1px solid #2e7d32; color: #1b5e20; }
+.check.fail { background: #fdecea; border: 1px solid #c62828; color: #7f0000; }
+pre {
+  white-space: pre-wrap; background: #fafafa; border: 1px solid #ddd;
+  border-radius: 8px; padding: 12px; font: inherit;
+}
+.law-note { background: #eef4ff; border: 1px solid #90a4d8; border-radius: 8px; padding: 10px 12px; }
+.case {
+  border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin: 10px 0;
+}
+.case .meta { color: #555; font-size: 0.9rem; }
+.case .claim { font-size: 0.85rem; color: #7a4a00; font-weight: 700; }
+.case .demo-badge {
+  background: #eee; border: 1px dashed #888; border-radius: 20px;
+  font-size: 0.8rem; padding: 1px 8px; font-weight: 600;
+}
+.case .score { font-weight: 700; }
+.case .reply { background: #f7f7f7; border-radius: 6px; padding: 8px; margin-top: 8px; }
+.case button.report { padding: 4px 10px; font-size: 0.85rem; }
+#trace-log { padding-inline-start: 20px; }
+#trace-log li { margin: 6px 0; font-size: 0.92rem; }
+#trace-log .pass { color: #1b5e20; font-weight: 700; }
+#trace-log .fail { color: #7f0000; font-weight: 700; }
+footer { color: #666; font-size: 0.85rem; text-align: center; padding: 10px 0 20px; }

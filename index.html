@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>صوت المستهلك — Consumer Voice</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>صوت المستهلك</h1>
+    <p class="tagline">تكلم بالدارجة على مشكلتك مع شركة → قضية منظمة + رسالة رسمية + لائحة عمومية</p>
+    <p id="model-banner" class="mock-banner">⚠️ نسخة تجريبية — النموذج الحالي <strong>MOCK</strong>: لا يتصل بأي نموذج حقيقي ولا يحتاج مفتاحا. المرحلة 1 غادي تعوضو بـ Muse Spark Open عبر Baseten.</p>
+  </header>
+
+  <!-- 1. Complaint input -->
+  <section id="panel-input" class="panel">
+    <h2>1 · شكايتك</h2>
+    <p class="hint">هضر بالدارجة: شنو وقع، معامن، وشنو بغيتي؟ مثال: «شريت تلفون من متجر تجريبي بـ 2000 درهم، طلع خاسر، وما بغاوش يرجعو ليا فلوسي»</p>
+    <textarea id="complaint-text" rows="4" placeholder="اكتب أو تكلم…"></textarea>
+    <div class="row">
+      <button type="button" id="btn-voice">🎤 تكلم</button>
+      <button type="button" id="btn-structure" class="primary">نظم القضية</button>
+      <span id="voice-status" class="status"></span>
+    </div>
+  </section>
+
+  <!-- 2. Structured case (editable) -->
+  <section id="panel-case" class="panel hidden">
+    <h2>2 · القضية المنظمة <span id="model-tag" class="mock-tag">MOCK</span></h2>
+    <p class="hint">راجع وصحح قبل النشر — أنت المسؤول على صحة الوقائع.</p>
+    <label>الشركة <input id="field-company" type="text" placeholder="اسم الشركة"></label>
+    <label>المشكل <input id="field-issue" type="text" placeholder="شنو وقع"></label>
+    <label>شنو بغيتي <input id="field-demand" type="text" placeholder="استرجاع، تبديل، إصلاح…"></label>
+    <label>المبلغ (درهم، إلا كان) <input id="field-amount" type="text" inputmode="numeric" placeholder="مثال: 2000"></label>
+    <label>الفئة
+      <select id="field-category">
+        <option value="shop">متجر / سلعة</option>
+        <option value="telecom">اتصالات</option>
+        <option value="delivery">توصيل</option>
+        <option value="bank">بنك / مالية</option>
+        <option value="internet">أنترنت</option>
+        <option value="other">أخرى</option>
+      </select>
+    </label>
+    <div class="row">
+      <button type="button" id="btn-verify" class="primary">تحقق قبل النشر</button>
+      <button type="button" id="btn-listen">🔊 استمع للملخص</button>
+    </div>
+    <div id="check-result" class="check" aria-live="polite"></div>
+  </section>
+
+  <!-- 3. Letter -->
+  <section id="panel-letter" class="panel hidden">
+    <h2>3 · الرسالة الرسمية — مسودة للمراجعة</h2>
+    <p class="hint">مسودة فقط، ماشي نصيحة قانونية. راجعها، صححها، ورسلها بسميتك وبوقائعك.</p>
+    <h3>بالعربية</h3>
+    <pre id="letter-ar" dir="rtl"></pre>
+    <h3>En français</h3>
+    <pre id="letter-fr" dir="ltr"></pre>
+    <p class="law-note">المرجع القانوني: <strong>قيد التحقق</strong> — لا يظهر أي رقم مادة أو نص مقتبس قبل التحقق من أحكام قانون حماية المستهلك أثناء البناء.</p>
+    <div class="row">
+      <button type="button" id="btn-publish" class="primary" disabled>انشر القضية بعد المراجعة</button>
+    </div>
+    <p class="hint">النشر متوقف على نجاح التحقق الإجباري أعلاه. بلا تحقق ناجح، زر النشر يبقى معطلا.</p>
+  </section>
+
+  <!-- 4. Public board -->
+  <section id="panel-board" class="panel">
+    <h2>4 · اللائحة العمومية</h2>
+    <p class="hint">القضايا المنشورة تظهر هنا كـ <strong>ادعاءات مستخدمين</strong> (ماشي أحكام مثبتة)، مع خانة رد الشركة وزر إبلاغ.</p>
+    <div id="board"></div>
+  </section>
+
+  <!-- 5. Trace log -->
+  <section id="panel-trace" class="panel">
+    <h2>5 · سجل التتبع (ظاهر للجميع)</h2>
+    <p class="hint">كل خطوة مسجلة: النص، الحقول المستخرجة، نتيجة التحقق، النشر.</p>
+    <ol id="trace-log"></ol>
+  </section>
+
+  <footer>
+    <p>صوت المستهلك — مشاركة هاكاثون Meta Global AI Developer Hackathon (مسار Indie، موضوع Build for Your World). الصوت داخل/خارج عبر واجهات المتصفح فقط، ماشي نموذج.</p>
+  </footer>
+</main>
+<script src="mock-model.js"></script>
+<script src="live-model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
